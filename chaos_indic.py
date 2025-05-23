@@ -2,8 +2,6 @@ import numpy as np
 from itertools import combinations
 from scipy.linalg import hankel
 import pandas as pd
-
-# from scipy.fftpack import fft
 from scipy.spatial import cKDTree
 from numpy.fft import fft
 
@@ -111,89 +109,6 @@ def DimEmb(tser, eps=0.1):
     )  # k - размерность вложения, dc - корреляционная размерность, ent - оценка энтропии.
 
 
-# def max_lyapunov(x, dt=1.0, eps=1e-6, fit_range=(0, 50)):
-#     # """
-#     # Approximate the maximal Lyapunov exponent λ from a single time series using
-#     # the method of nearest neighbors in delay-embedded space.
-#     # * x: 1D array of length N
-#     # * dt: sampling interval
-#     # * eps: initial neighbor separation threshold
-#     # * fit_range: indices (start, end) over which to fit the divergence curve
-#     # """
-#     # # 1) Reconstruct phase space (simple 2D embedding for illustration)
-#     # X = np.column_stack([x[:-1], x[1:]])
-#     # N = len(X)
-#     # tree = cKDTree(X)
-#     # # 2) Find nearest neighbor for each point (excluding trivial self-match)
-#     # dists, idxs = tree.query(X, k=2)
-#     # neighbors = idxs[:, 1]
-#     # # 3) Track separation over time
-#     # L = N - max(fit_range)
-#     # separation = np.zeros(L)
-#     # for t in range(L):
-#     #     i = t
-#     #     j = neighbors[t]
-#     #     # iterate forward until end
-#     #     for k in range(fit_range[1]):
-#     #         if i + k < N and j + k < N:
-#     #             separation[t] += np.log(abs(x[i + k] - x[j + k]) + 1e-12)
-#     # # 4) Average divergence curve and linear fit
-#     # times = np.arange(fit_range[0], fit_range[1]) * dt
-#     # div_curve = separation.mean(axis=0)
-#     # coefs = np.polyfit(times, div_curve, 1)
-#     # return coefs[0]  # slope ≈ λ
-
-#     """
-#     Approximate the maximal Lyapunov exponent λ from a single time series using
-#     nearest-neighbor divergence in a simple 2D embedding.
-
-#     Parameters:
-#     - x: 1D numpy array, the time series (must be numeric and finite).
-#     - dt: float, time between samples.
-#     - fit_range: tuple (k_min, k_max), number of steps over which to compute divergence.
-
-#     Returns:
-#     - lambda_max: float, estimated maximal Lyapunov exponent.
-#     """
-#     x = np.asarray(x).astype(float)
-#     # 1) Simple 2D embedding
-#     X = np.column_stack([x[:-1], x[1:]])
-#     N = len(X)
-#     if N < fit_range[1] + 1:
-#         raise ValueError("Time series too short for the specified fit_range.")
-
-#     # 2) Find nearest neighbor for each point (excluding self)
-#     tree = cKDTree(X)
-#     dists, idxs = tree.query(X, k=2)
-#     neighbors = idxs[:, 1]
-
-#     # 3) Compute average log separation at each time offset k
-#     k_min, k_max = fit_range
-#     L = N - k_max
-#     divergence = []
-#     for k in range(k_min, k_max):
-#         vals = []
-#         for i in range(L):
-#             j = neighbors[i]
-#             if j + k < N and i + k < N:
-#                 dist = abs(x[i + k] - x[j + k]) + 1e-12
-#                 vals.append(np.log(dist))
-#         if len(vals) > 0:
-#             divergence.append(np.mean(vals))
-#         else:
-#             divergence.append(np.nan)
-#     divergence = np.array(divergence)
-
-#     # 4) Linear fit of divergence vs time
-#     times = np.arange(k_min, k_max) * dt
-#     # Filter nan entries
-#     mask = ~np.isnan(divergence)
-#     if mask.sum() < 2:
-#         raise ValueError("Not enough valid divergence points for fitting.")
-#     coefs = np.polyfit(times[mask], divergence[mask], 1)
-#     return coefs[0]  # slope is the Lyapunov exponent estimate
-
-
 def max_lyapunov(x, emb_dim=10, lag=1, fit_len=20):
     """
     Estimate the maximal Lyapunov exponent from a single time series using
@@ -253,35 +168,6 @@ def max_lyapunov(x, emb_dim=10, lag=1, fit_len=20):
 
     # The slope is the maximal Lyapunov exponent
     return slope
-
-
-# def ks_entropy_graph(x, m=10, tau=1, k=5):
-# """
-# Graph-based KS entropy estimator from Shiozawa & Tokuda (2024).
-# * x: 1D array
-# * m, tau: embedding parameters
-# * k: number of neighbors to define transitions
-# """
-# # 1) Delay-embed
-# N = len(x) - (m - 1) * tau
-# Y = np.empty((N, m))
-# for i in range(m):
-#     Y[:, i] = x[i * tau : i * tau + N]
-# # 2) Build k-NN graph
-# tree = cKDTree(Y)
-# dists, idxs = tree.query(Y, k=k + 1)
-# # 3) Count transitions
-# P = np.zeros((N, N))
-# for i, neighbors in enumerate(idxs):
-#     for j in neighbors[1:]:
-#         P[i, j] += 1
-# # normalize rows
-# row_sums = P.sum(axis=1, keepdims=True)
-# P = np.divide(P, row_sums, where=row_sums > 0)
-# # 4) Compute entropy rate
-# nonzero = P > 0
-# H = -np.sum(P[nonzero] * np.log(P[nonzero]))
-# return H / N
 
 
 def ks_entropy_partition(x, n_bins=10):
